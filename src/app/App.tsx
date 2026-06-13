@@ -46,7 +46,20 @@ export default function App() {
   {/* MARKER-MAKE-KIT-INVOKED */}
   const [currentPage, setCurrentPage] = useState<Page>("home");
   const [params, setParams] = useState<PageParams>({});
-  const [usuarioLogado, setUsuarioLogado] = useState<UsuarioLogado | null>(null);
+  const [usuarioLogado, setUsuarioLogado] = useState<UsuarioLogado | null>(() => {
+  const usuarioSalvo = localStorage.getItem("usuarioLogado");
+
+  if (usuarioSalvo) {
+    try {
+      return JSON.parse(usuarioSalvo);
+    } catch {
+      localStorage.removeItem("usuarioLogado");
+      return null;
+    }
+  }
+
+  return null;
+});
 
   const navigate = (page: string, newParams: Record<string, string> = {}) => {
     setCurrentPage(page as Page);
@@ -54,21 +67,24 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleLogin = (usuario: UsuarioLogado) => {
-    setUsuarioLogado(usuario);
-    if (usuario.tipo === "admin") {
-      navigate("admin-dashboard");
-    } else if (usuario.tipo === "prestador") {
-      navigate("provider-dashboard");
-    } else {
-      navigate("home");
-    }
-  };
+const handleLogin = (usuario: UsuarioLogado) => {
+  setUsuarioLogado(usuario);
+  localStorage.setItem("usuarioLogado", JSON.stringify(usuario));
+
+  if (usuario.tipo === "admin") {
+    navigate("admin-dashboard");
+  } else if (usuario.tipo === "prestador") {
+    navigate("provider-dashboard");
+  } else {
+    navigate("home");
+  }
+};
 
   const handleLogout = () => {
-    setUsuarioLogado(null);
-    navigate("home");
-  };
+  setUsuarioLogado(null);
+  localStorage.removeItem("usuarioLogado");
+  navigate("home");
+};
 
   const showFooter = !PAGES_WITHOUT_FOOTER.includes(currentPage);
 
