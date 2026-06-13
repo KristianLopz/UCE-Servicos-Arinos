@@ -80,16 +80,74 @@ export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProp
     setForm((f) => (f ? { ...f, [campo]: v } : f));
   };
 
-  const adicionarServico = () => {
-    if (novoServico.trim()) {
-      setServicos((s) => [...s, novoServico.trim()]);
-      setNovoServico("");
-    }
-  };
+ const adicionarServico = async () => {
+  if (!form) return;
 
-  const removerServico = (i: number) => {
-    setServicos((s) => s.filter((_, idx) => idx !== i));
-  };
+  const nomeServico = novoServico.trim();
+
+  if (!nomeServico) {
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${API_URL}/adicionarServicoPrestador.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: form.id,
+        nomeServico,
+      }),
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
+      setNovoServico("");
+      await carregarPerfil();
+    } else {
+      alert(dados.mensagem || "Erro ao adicionar serviço.");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Não foi possível conectar com a API.");
+  }
+};
+
+const removerServico = async (i: number) => {
+  if (!form) return;
+
+  const nomeServico = servicos[i];
+
+  if (!confirm(`Remover o serviço "${nomeServico}"?`)) {
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${API_URL}/removerServicoPrestador.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: form.id,
+        nomeServico,
+      }),
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
+      await carregarPerfil();
+    } else {
+      alert(dados.mensagem || "Erro ao remover serviço.");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Não foi possível conectar com a API.");
+  }
+};
 
   if (carregando) {
     return (
