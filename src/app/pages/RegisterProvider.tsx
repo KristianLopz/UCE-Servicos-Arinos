@@ -1,8 +1,8 @@
+import { formatarTelefone, limparTelefone } from "../utils/formatarTelefone";
 import { useState } from "react";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { FormContainer, InputField, SelectField, TextareaField } from "../components/FormContainer";
 import { categorias, bairros } from "../data/mockData";
-import { formatarTelefone, limparTelefone } from "../utils/formatarTelefone";
 import { API_URL } from "../config/api";
 
 
@@ -51,7 +51,15 @@ const handleSubmit = async (e: React.FormEvent) => {
     return;
   }
 
-  setLoading(true);
+
+const whatsappLimpo = limparTelefone(form.whatsapp);
+
+if (whatsappLimpo.length < 10 || whatsappLimpo.length > 11) {
+  setErro("Informe um WhatsApp válido com DDD.");
+  return;
+}
+
+setLoading(true);
 
   try {
     const resposta = await fetch(`${API_URL}/cadastrarPrestador.php`, {
@@ -63,7 +71,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         nomeCompleto: form.nomeCompleto,
         nomeProfissional: form.nomeProfissional,
         email: form.email,
-        whatsapp: limparTelefone(form.whatsapp),
+        whatsapp: whatsappLimpo,
         categoriaId: form.categoriaId,
         descricao: form.descricao,
         bairro: form.bairro,
