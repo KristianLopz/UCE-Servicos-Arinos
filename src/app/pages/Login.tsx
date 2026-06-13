@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, Wrench, Shield } from "lucide-react";
+import { User, Wrench } from "lucide-react";
 import { FormContainer, InputField } from "../components/FormContainer";
 import type { UsuarioLogado, TipoUsuario } from "../App";
 
@@ -135,7 +135,7 @@ export function Login({ onNavigate, onLogin }: LoginProps) {
           {/* Contas demo */}
           <div className="mt-5 p-4 bg-secondary/60 rounded-xl">
             <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-              Contas de demonstração (senha: 1234)
+              Contas de teste cadastradas no banco (senha: 1234)
             </p>
             <ul className="flex flex-col gap-1.5">
               {Object.entries(CONTAS_DEMO).map(([e, c]) => (
@@ -168,16 +168,8 @@ export function Login({ onNavigate, onLogin }: LoginProps) {
             </button>
           </div>
 
-          {/* Acesso admin direto */}
-          <div className="mt-4 pt-4 border-t border-border text-center">
-            <button
-              onClick={() => onLogin({ nomeCompleto: "Administrador Arinos", email: "admin@servicosarinos.com.br", tipo: "admin" })}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              Acesso administrativo (demo)
-            </button>
-          </div>
+          
+
         </FormContainer>
       </div>
     </div>
