@@ -1,3 +1,4 @@
+import { formatarTelefone, limparTelefone } from "../utils/formatarTelefone";
 import { useEffect, useState } from "react";
 import {
   User, Edit, Eye, CheckCircle, Clock, XCircle,
@@ -27,7 +28,7 @@ function calcularDistribuicaoAvaliacoes(lista: Avaliacao[]) {
 }
 
 export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProps) {
-    const [aba, setAba] = useState<"visao-geral" | "perfil" | "servicos" | "previa">("visao-geral");
+  const [aba, setAba] = useState<"visao-geral" | "perfil" | "servicos" | "previa">("visao-geral");
   const [editando, setEditando] = useState(false);
   const [form, setForm] = useState<Prestador | null>(null);
   const [novoServico, setNovoServico] = useState("");
@@ -35,6 +36,9 @@ export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProp
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
+  const setWhatsapp = (v: string) => {
+  setForm((f) => (f ? { ...f, whatsapp: formatarTelefone(v) } : f));
+};
 
   const carregarPerfil = async () => {
     if (!usuario) {
@@ -139,6 +143,49 @@ export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProp
     { id: "servicos",    label: "Meus Serviços" },
     { id: "previa",      label: "Prévia do Card" },
   ] as const;
+
+  const salvarPerfil = async () => {
+  if (!form) return;
+
+  const whatsappLimpo = limparTelefone(form.whatsapp);
+
+  if (whatsappLimpo.length < 10 || whatsappLimpo.length > 11) {
+    alert("Informe um WhatsApp válido com DDD.");
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${API_URL}/editarPerfilPrestador.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: form.id,
+        nomeCompleto: form.nomeCompleto,
+        nomeProfissional: form.nomeProfissional,
+        whatsapp: whatsappLimpo,
+        categoriaId: form.categoriaId,
+        descricao: form.descricao,
+        bairro: form.bairro,
+      }),
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
+      alert("Perfil atualizado com sucesso!");
+      setEditando(false);
+      await carregarPerfil();
+    } else {
+      alert(dados.mensagem || "Erro ao atualizar perfil.");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Não foi possível conectar com a API.");
+  }
+};
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Cabeçalho */}
@@ -324,8 +371,21 @@ export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProp
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <InputField label="Nome completo"      value={form.nomeCompleto}     onChange={set("nomeCompleto")}     required />
                 <InputField label="Nome profissional"  value={form.nomeProfissional}  onChange={set("nomeProfissional")} required />
-                <InputField label="E-mail" type="email" value={form.email}            onChange={set("email")}            required />
-                <InputField label="WhatsApp"           value={form.whatsapp}          onChange={set("whatsapp")}         required />
+               <InputField
+                    label="E-mail"
+                    type="email"
+                    value={form.email}
+                    onChange={() => {}}
+                    required
+                    hint="O e-mail de login não pode ser alterado por aqui."
+                  />
+               <InputField
+                    label="WhatsApp"
+                    value={form.whatsapp}
+                    onChange={setWhatsapp}
+                    placeholder="(38) 99999-9999"
+                    required
+                  />
                 <SelectField
                   label="Categoria"
                   value={form.categoriaId}
@@ -344,7 +404,7 @@ export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProp
               </div>
               <TextareaField label="Descrição" value={form.descricao} onChange={set("descricao")} rows={4} />
               <button
-                onClick={() => setEditando(false)}
+                onClick={salvarPerfil}
                 className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity"
               >
                 Salvar alterações
