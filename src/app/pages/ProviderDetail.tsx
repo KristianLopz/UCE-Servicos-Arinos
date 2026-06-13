@@ -108,22 +108,47 @@ export function ProviderDetail({ prestadorId, onNavigate, usuarioLogado }: Provi
 
   const whatsappLink = getWhatsAppLink(prestador.whatsapp);
 
-  const enviarAvaliacao = () => {
-    if (!notaSelecionada || !usuarioLogado) return;
+const enviarAvaliacao = async () => {
+  if (!notaSelecionada || !usuarioLogado) return;
 
-    const novaAv: Avaliacao = {
-      id: `av-${Date.now()}`,
-      prestadorId,
-      usuarioId: usuarioLogado.email,
-      nomeUsuario: usuarioLogado.nomeCompleto,
-      nota: notaSelecionada,
-      data: new Date().toISOString().split("T")[0],
-    };
+  try {
+    const resposta = await fetch(`${API_URL}/avaliarPrestador.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prestadorId,
+        emailUsuario: usuarioLogado.email,
+        nomeUsuario: usuarioLogado.nomeCompleto,
+        nota: notaSelecionada,
+      }),
+    });
 
-    setListaAvaliacoes((prev) => [...prev, novaAv]);
-    setJaAvaliou(true);
-    setAvaliacaoEnviada(true);
-  };
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
+      setJaAvaliou(true);
+      setAvaliacaoEnviada(true);
+
+      const respostaAtualizada = await fetch(
+        `${API_URL}/detalhesPrestador.php?id=${prestadorId}`
+      );
+
+      const dadosAtualizados = await respostaAtualizada.json();
+
+      if (dadosAtualizados.sucesso) {
+        setPrestador(dadosAtualizados.prestador);
+        setListaAvaliacoes(dadosAtualizados.avaliacoes);
+      }
+    } else {
+      alert(dados.mensagem || "Erro ao enviar avaliação.");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Não foi possível conectar com a API.");
+  }
+};
 
   const podeAvaliar =
     usuarioLogado?.tipo === "usuario" &&
