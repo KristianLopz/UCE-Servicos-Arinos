@@ -8,6 +8,8 @@ interface RegisterUserProps {
   onLogin: (usuario: UsuarioLogado) => void;
 }
 
+const API_URL = "http://localhost/servicos-arinos-api";
+
 export function RegisterUser({ onNavigate, onLogin }: RegisterUserProps) {
   const [form, setForm] = useState({
     nomeCompleto: "",
@@ -22,25 +24,56 @@ export function RegisterUser({ onNavigate, onLogin }: RegisterUserProps) {
 
   const set = (campo: string) => (v: string) => setForm((f) => ({ ...f, [campo]: v }));
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErro("");
-    if (form.senha !== form.confirmarSenha) {
-      setErro("As senhas não coincidem.");
-      return;
-    }
-    if (form.senha.length < 6) {
-      setErro("A senha deve ter pelo menos 6 caracteres.");
-      return;
-    }
-    setLoading(true);
-    // TODO: integrar com API de cadastro
-    setTimeout(() => {
-      setLoading(false);
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErro("");
+
+  if (form.senha !== form.confirmarSenha) {
+    setErro("As senhas não coincidem.");
+    return;
+  }
+
+  if (form.senha.length < 6) {
+    setErro("A senha deve ter pelo menos 6 caracteres.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const resposta = await fetch(`${API_URL}/cadastrarUsuario.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        nomeCompleto: form.nomeCompleto,
+        email: form.email,
+        telefone: form.telefone,
+        senha: form.senha,
+      }),
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
       setSucesso(true);
-      onLogin({ nomeCompleto: form.nomeCompleto, email: form.email, tipo: "usuario" });
-    }, 1000);
-  };
+
+      onLogin({
+        nomeCompleto: dados.usuario.nomeCompleto,
+        email: dados.usuario.email,
+        tipo: dados.usuario.tipo,
+      });
+    } else {
+      setErro(dados.mensagem || "Erro ao cadastrar usuário.");
+    }
+  } catch (error) {
+    console.error(error);
+    setErro("Não foi possível conectar com a API.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (sucesso) {
     return (
