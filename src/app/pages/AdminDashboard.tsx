@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Users, Wrench, Clock, Tag, Check, X, Trash2, Plus } from "lucide-react";
 import { categorias as mockCategorias } from "../data/mockData";
-import type { Prestador } from "../data/mockData";
+import type { Prestador, Categoria } from "../data/mockData";
 import { DashboardCard } from "../components/DashboardCard";
 import type { UsuarioLogado } from "../App";
 
@@ -25,12 +25,28 @@ const [estatisticas, setEstatisticas] = useState({
   bloqueados: 0,
   totalCategorias: 0,
 });
-  const [cats, setCats] = useState(mockCategorias);
+  const [cats, setCats] = useState<Categoria[]>([]);
   const [novaCategoria, setNovaCategoria] = useState("");
 
 const aprovados = estatisticas.aprovados;
 const pendentes = estatisticas.pendentes;
 const bloqueados = estatisticas.bloqueados;
+
+const carregarCategorias = async () => {
+  try {
+    const resposta = await fetch(`${API_URL}/listarCategorias.php`);
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
+      setCats(dados.categorias);
+    } else {
+      alert(dados.mensagem || "Erro ao carregar categorias.");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Não foi possível conectar com a API de categorias.");
+  }
+};
 
 const carregarPrestadores = async () => {
   try {
@@ -56,6 +72,7 @@ const carregarPrestadores = async () => {
 
 useEffect(() => {
   carregarPrestadores();
+  carregarCategorias();
 }, []);
 
 const atualizarStatus = async (id: string, status: Prestador["status"]) => {
@@ -108,15 +125,68 @@ const excluir = async (id: string) => {
   }
 };
 
-  const adicionarCategoria = () => {
-    if (novaCategoria.trim()) {
-      setCats((c) => [
-        ...c,
-        { id: novaCategoria.toLowerCase().replace(/\s/g, "-"), nome: novaCategoria.trim(), icone: "🛠️", cor: "#64748b", totalPrestadores: 0 },
-      ]);
+const adicionarCategoria = async () => {
+  const nome = novaCategoria.trim();
+
+  if (!nome) {
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${API_URL}/criarCategoria.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        nome,
+        icone: "🛠️",
+        cor: "#64748b",
+      }),
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
       setNovaCategoria("");
+      await carregarCategorias();
+      await carregarPrestadores();
+    } else {
+      alert(dados.mensagem || "Erro ao criar categoria.");
     }
-  };
+  } catch (error) {
+    console.error(error);
+    alert("Não foi possível conectar com a API.");
+  }
+};
+
+const excluirCategoria = async (id: string) => {
+  if (!confirm("Tem certeza que deseja excluir esta categoria?")) {
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${API_URL}/excluirCategoria.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id }),
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
+      await carregarCategorias();
+      await carregarPrestadores();
+    } else {
+      alert(dados.mensagem || "Erro ao excluir categoria.");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Não foi possível conectar com a API.");
+  }
+};
 
   const statusBadge = (status: Prestador["status"]) => {
     const map = {
@@ -327,7 +397,7 @@ const excluir = async (id: string) => {
                   </div>
                 </div>
                 <button
-                  onClick={() => setCats((c) => c.filter((x) => x.id !== cat.id))}
+                  onClick={() => excluirCategoria(cat.id)}
                   className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
