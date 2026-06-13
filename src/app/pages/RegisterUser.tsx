@@ -2,11 +2,16 @@ import { useState } from "react";
 import { CheckCircle } from "lucide-react";
 import { FormContainer, InputField } from "../components/FormContainer";
 import type { UsuarioLogado } from "../App";
+import { formatarTelefone, limparTelefone } from "../utils/formatarTelefone";
 
 interface RegisterUserProps {
   onNavigate: (page: string) => void;
   onLogin: (usuario: UsuarioLogado) => void;
 }
+
+const setTelefone = (v: string) => {
+  setForm((f) => ({ ...f, telefone: formatarTelefone(v) }));
+};
 
 const API_URL = "http://localhost/servicos-arinos-api";
 
@@ -49,7 +54,7 @@ export function RegisterUser({ onNavigate, onLogin }: RegisterUserProps) {
       body: JSON.stringify({
         nomeCompleto: form.nomeCompleto,
         email: form.email,
-        telefone: form.telefone,
+        telefone: limparTelefone(form.telefone),
         senha: form.senha,
       }),
     });
@@ -116,7 +121,14 @@ export function RegisterUser({ onNavigate, onLogin }: RegisterUserProps) {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-4">
             <InputField label="Nome completo" value={form.nomeCompleto} onChange={set("nomeCompleto")} placeholder="Seu nome completo" required />
             <InputField label="E-mail" type="email" value={form.email} onChange={set("email")} placeholder="seu@email.com" required />
-            <InputField label="Telefone" type="tel" value={form.telefone} onChange={set("telefone")} placeholder="(38) 9 9999-9999" required />
+            <InputField
+                  label="Telefone"
+                  type="tel"
+                  value={form.telefone}
+                  onChange={setTelefone}
+                  placeholder="(38) 99999-9999"
+                  required
+                />
             <InputField label="Senha" type="password" value={form.senha} onChange={set("senha")} placeholder="Mínimo 6 caracteres" required />
             <InputField label="Confirmar senha" type="password" value={form.confirmarSenha} onChange={set("confirmarSenha")} placeholder="Repita a senha" required />
 

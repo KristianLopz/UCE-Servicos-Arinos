@@ -2,10 +2,14 @@ import { useState } from "react";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { FormContainer, InputField, SelectField, TextareaField } from "../components/FormContainer";
 import { categorias, bairros } from "../data/mockData";
+import { formatarTelefone, limparTelefone } from "../utils/formatarTelefone";
+
 
 interface RegisterProviderProps {
   onNavigate: (page: string) => void;
 }
+
+const API_URL = "http://localhost/servicos-arinos-api";
 
 export function RegisterProvider({ onNavigate }: RegisterProviderProps) {
   const [form, setForm] = useState({
@@ -24,29 +28,63 @@ export function RegisterProvider({ onNavigate }: RegisterProviderProps) {
   const [loading, setLoading] = useState(false);
 
   const set = (campo: string) => (v: string) => setForm((f) => ({ ...f, [campo]: v }));
+  const setWhatsapp = (v: string) => {
+  setForm((f) => ({ ...f, whatsapp: formatarTelefone(v) }));
+};
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErro("");
-    if (form.senha !== form.confirmarSenha) {
-      setErro("As senhas não coincidem.");
-      return;
-    }
-    if (form.senha.length < 6) {
-      setErro("A senha deve ter pelo menos 6 caracteres.");
-      return;
-    }
-    if (!form.categoriaId) {
-      setErro("Selecione uma categoria principal.");
-      return;
-    }
-    setLoading(true);
-    // TODO: integrar com API de cadastro de prestador
-    setTimeout(() => {
-      setLoading(false);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErro("");
+
+  if (form.senha !== form.confirmarSenha) {
+    setErro("As senhas não coincidem.");
+    return;
+  }
+
+  if (form.senha.length < 6) {
+    setErro("A senha deve ter pelo menos 6 caracteres.");
+    return;
+  }
+
+  if (!form.categoriaId) {
+    setErro("Selecione uma categoria principal.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const resposta = await fetch(`${API_URL}/cadastrarPrestador.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        nomeCompleto: form.nomeCompleto,
+        nomeProfissional: form.nomeProfissional,
+        email: form.email,
+        whatsapp: limparTelefone(form.whatsapp),
+        categoriaId: form.categoriaId,
+        descricao: form.descricao,
+        bairro: form.bairro,
+        senha: form.senha,
+      }),
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
       setSucesso(true);
-    }, 1200);
-  };
+    } else {
+      setErro(dados.mensagem || "Erro ao cadastrar prestador.");
+    }
+  } catch (error) {
+    console.error(error);
+    setErro("Não foi possível conectar com a API.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (sucesso) {
     return (
@@ -112,10 +150,10 @@ export function RegisterProvider({ onNavigate }: RegisterProviderProps) {
               label="Telefone / WhatsApp"
               type="tel"
               value={form.whatsapp}
-              onChange={set("whatsapp")}
-              placeholder="(38) 9 9999-9999"
+              onChange={setWhatsapp}
+              placeholder="(38) 99999-9999"
               required
-              hint="Os clientes entrarão em contato por este número"
+              hint="Digite apenas números. Os clientes entrarão em contato por este número"
             />
             <SelectField
               label="Categoria principal"
