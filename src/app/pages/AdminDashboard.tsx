@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Users, Wrench, Clock, Tag, Check, X, Trash2, Plus } from "lucide-react";
-import { prestadores as mockPrestadores, categorias as mockCategorias } from "../data/mockData";
+import { categorias as mockCategorias } from "../data/mockData";
 import type { Prestador } from "../data/mockData";
 import { DashboardCard } from "../components/DashboardCard";
 import type { UsuarioLogado } from "../App";
@@ -10,25 +10,103 @@ interface AdminDashboardProps {
   usuario: UsuarioLogado | null;
 }
 
+const API_URL = "http://localhost/servicos-arinos-api";
+
 export function AdminDashboard({ onNavigate, usuario }: AdminDashboardProps) {
   const [aba, setAba] = useState<"pendentes" | "prestadores" | "categorias">("pendentes");
-  const [lista, setLista] = useState<Prestador[]>(mockPrestadores);
+  const [lista, setLista] = useState<Prestador[]>([]);
+const [carregando, setCarregando] = useState(true);
+const [erro, setErro] = useState("");
+const [estatisticas, setEstatisticas] = useState({
+  totalUsuarios: 0,
+  totalPrestadores: 0,
+  aprovados: 0,
+  pendentes: 0,
+  bloqueados: 0,
+  totalCategorias: 0,
+});
   const [cats, setCats] = useState(mockCategorias);
   const [novaCategoria, setNovaCategoria] = useState("");
 
-  const aprovados = lista.filter((p) => p.status === "aprovado").length;
-  const pendentes = lista.filter((p) => p.status === "aguardando").length;
-  const bloqueados = lista.filter((p) => p.status === "bloqueado").length;
+const aprovados = estatisticas.aprovados;
+const pendentes = estatisticas.pendentes;
+const bloqueados = estatisticas.bloqueados;
 
-  const atualizarStatus = (id: string, status: Prestador["status"]) => {
-    setLista((l) => l.map((p) => (p.id === id ? { ...p, status } : p)));
-  };
+const carregarPrestadores = async () => {
+  try {
+    setCarregando(true);
+    setErro("");
 
-  const excluir = (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este prestador?")) {
-      setLista((l) => l.filter((p) => p.id !== id));
+    const resposta = await fetch(`${API_URL}/adminListarPrestadores.php`);
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
+      setLista(dados.prestadores);
+      setEstatisticas(dados.estatisticas);
+    } else {
+      setErro(dados.mensagem || "Erro ao carregar prestadores.");
     }
-  };
+  } catch (error) {
+    console.error(error);
+    setErro("Não foi possível conectar com a API.");
+  } finally {
+    setCarregando(false);
+  }
+};
+
+useEffect(() => {
+  carregarPrestadores();
+}, []);
+
+const atualizarStatus = async (id: string, status: Prestador["status"]) => {
+  try {
+    const resposta = await fetch(`${API_URL}/adminAtualizarStatusPrestador.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id, status }),
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
+      await carregarPrestadores();
+    } else {
+      alert(dados.mensagem || "Erro ao atualizar status.");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Não foi possível conectar com a API.");
+  }
+};
+
+const excluir = async (id: string) => {
+  if (!confirm("Tem certeza que deseja excluir este prestador?")) {
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${API_URL}/adminExcluirPrestador.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id }),
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
+      await carregarPrestadores();
+    } else {
+      alert(dados.mensagem || "Erro ao excluir prestador.");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Não foi possível conectar com a API.");
+  }
+};
 
   const adicionarCategoria = () => {
     if (novaCategoria.trim()) {
@@ -65,11 +143,23 @@ export function AdminDashboard({ onNavigate, usuario }: AdminDashboardProps) {
 
       {/* Cards resumo */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <DashboardCard titulo="Usuários" valor={128} icone={<Users className="w-6 h-6" />} cor="#1a5eb8" subtitulo="Cadastrados" />
+        <DashboardCard titulo="Usuários" valor={estatisticas.totalUsuarios} icone={<Users className="w-6 h-6" />} cor="#1a5eb8" subtitulo="Cadastrados" />
         <DashboardCard titulo="Prestadores" valor={aprovados} icone={<Wrench className="w-6 h-6" />} cor="#16a34a" subtitulo="Aprovados" />
         <DashboardCard titulo="Pendentes" valor={pendentes} icone={<Clock className="w-6 h-6" />} cor="#f59e0b" subtitulo="Aguardando análise" />
         <DashboardCard titulo="Categorias" valor={cats.length} icone={<Tag className="w-6 h-6" />} cor="#7c3aed" subtitulo="Tipos de serviço" />
       </div>
+
+      {carregando && (
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-8 text-center text-muted-foreground mb-6">
+        Carregando dados do painel...
+      </div>
+    )}
+
+    {erro && (
+      <div className="bg-destructive/10 text-destructive rounded-xl p-4 text-sm mb-6">
+        {erro}
+      </div>
+    )}
 
       {/* Abas */}
       <div className="flex gap-1 bg-secondary/50 p-1 rounded-xl mb-6 overflow-x-auto">
