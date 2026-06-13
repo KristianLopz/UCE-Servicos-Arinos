@@ -9,13 +9,16 @@ interface RegisterUserProps {
   onLogin: (usuario: UsuarioLogado) => void;
 }
 
-const setTelefone = (v: string) => {
-  setForm((f) => ({ ...f, telefone: formatarTelefone(v) }));
-};
+
 
 const API_URL = "http://localhost/servicos-arinos-api";
 
 export function RegisterUser({ onNavigate, onLogin }: RegisterUserProps) {
+
+const setTelefone = (v: string) => {
+  setForm((f) => ({ ...f, telefone: formatarTelefone(v) }));
+};
+
   const [form, setForm] = useState({
     nomeCompleto: "",
     email: "",
@@ -29,7 +32,7 @@ export function RegisterUser({ onNavigate, onLogin }: RegisterUserProps) {
 
   const set = (campo: string) => (v: string) => setForm((f) => ({ ...f, [campo]: v }));
 
- const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setErro("");
 
@@ -40,6 +43,13 @@ export function RegisterUser({ onNavigate, onLogin }: RegisterUserProps) {
 
   if (form.senha.length < 6) {
     setErro("A senha deve ter pelo menos 6 caracteres.");
+    return;
+  }
+
+  const telefoneLimpo = limparTelefone(form.telefone);
+
+  if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
+    setErro("Informe um telefone válido com DDD.");
     return;
   }
 
@@ -54,7 +64,7 @@ export function RegisterUser({ onNavigate, onLogin }: RegisterUserProps) {
       body: JSON.stringify({
         nomeCompleto: form.nomeCompleto,
         email: form.email,
-        telefone: limparTelefone(form.telefone),
+        telefone: telefoneLimpo,
         senha: form.senha,
       }),
     });
