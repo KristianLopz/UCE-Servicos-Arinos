@@ -3,6 +3,7 @@ import { CheckCircle } from "lucide-react";
 import { FormContainer, InputField } from "../components/FormContainer";
 import type { UsuarioLogado } from "../App";
 import { formatarTelefone, limparTelefone } from "../utils/formatarTelefone";
+import { API_URL } from "../config/api";
 
 interface RegisterUserProps {
   onNavigate: (page: string) => void;
@@ -11,7 +12,6 @@ interface RegisterUserProps {
 
 
 
-const API_URL = "http://localhost/servicos-arinos-api";
 
 export function RegisterUser({ onNavigate, onLogin }: RegisterUserProps) {
 

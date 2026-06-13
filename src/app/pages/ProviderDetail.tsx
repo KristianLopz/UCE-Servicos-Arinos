@@ -3,6 +3,7 @@ import { MapPin, MessageCircle, Phone, User, ArrowLeft, CheckCircle, Users, Star
 import type { Prestador, Avaliacao } from "../data/mockData";
 import { StarRating, RatingBar } from "../components/StarRating";
 import type { UsuarioLogado } from "../App";
+import { API_URL } from "../config/api";
 
 interface ProviderDetailProps {
   prestadorId: string;
@@ -10,7 +11,6 @@ interface ProviderDetailProps {
   usuarioLogado?: UsuarioLogado | null;
 }
 
-const API_URL = "http://localhost/servicos-arinos-api";
 
 function getWhatsAppLink(whatsapp: string): string {
   const numero = whatsapp.replace(/\D/g, "");

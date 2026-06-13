@@ -9,13 +9,13 @@ import type { Prestador, Avaliacao } from "../data/mockData";
 import { InputField, SelectField, TextareaField } from "../components/FormContainer";
 import { StarRating, RatingBar } from "../components/StarRating";
 import type { UsuarioLogado } from "../App";
+import { API_URL } from "../config/api";
 
 interface ProviderDashboardProps {
   onNavigate: (page: string) => void;
   usuario: UsuarioLogado | null;
 }
 
-const API_URL = "http://localhost/servicos-arinos-api";
 
 function calcularDistribuicaoAvaliacoes(lista: Avaliacao[]) {
   const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };

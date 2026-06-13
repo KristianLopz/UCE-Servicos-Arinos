@@ -3,6 +3,7 @@ import { SlidersHorizontal } from "lucide-react";
 import type { Prestador, Categoria } from "../data/mockData";
 import { ProviderCard } from "../components/ProviderCard";
 import { SearchBar } from "../components/SearchBar";
+import { API_URL } from "../config/api";
 
 interface SearchProps {
   onNavigate: (page: string, params?: Record<string, string>) => void;
@@ -10,7 +11,6 @@ interface SearchProps {
   initialCategoria?: string;
 }
 
-const API_URL = "http://localhost/servicos-arinos-api";
 
 export function Search({ onNavigate, initialQuery = "", initialCategoria = "" }: SearchProps) {
   const [query, setQuery] = useState(initialQuery);

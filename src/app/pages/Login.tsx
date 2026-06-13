@@ -2,13 +2,13 @@ import { useState } from "react";
 import { User, Wrench } from "lucide-react";
 import { FormContainer, InputField } from "../components/FormContainer";
 import type { UsuarioLogado, TipoUsuario } from "../App";
+import { API_URL } from "../config/api";
 
 interface LoginProps {
   onNavigate: (page: string) => void;
   onLogin: (usuario: UsuarioLogado) => void;
 }
 
-const API_URL = "http://localhost/servicos-arinos-api";
 
 // Contas de demonstração para login sem backend
 const CONTAS_DEMO: Record<string, { nomeCompleto: string; tipo: TipoUsuario }> = {

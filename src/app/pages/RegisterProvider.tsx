@@ -3,13 +3,13 @@ import { CheckCircle, AlertCircle } from "lucide-react";
 import { FormContainer, InputField, SelectField, TextareaField } from "../components/FormContainer";
 import { categorias, bairros } from "../data/mockData";
 import { formatarTelefone, limparTelefone } from "../utils/formatarTelefone";
+import { API_URL } from "../config/api";
 
 
 interface RegisterProviderProps {
   onNavigate: (page: string) => void;
 }
 
-const API_URL = "http://localhost/servicos-arinos-api";
 
 export function RegisterProvider({ onNavigate }: RegisterProviderProps) {
   const [form, setForm] = useState({

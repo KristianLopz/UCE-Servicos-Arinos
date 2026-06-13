@@ -4,13 +4,14 @@ import { categorias as mockCategorias } from "../data/mockData";
 import type { Prestador, Categoria } from "../data/mockData";
 import { DashboardCard } from "../components/DashboardCard";
 import type { UsuarioLogado } from "../App";
+import { API_URL } from "../config/api";
+
 
 interface AdminDashboardProps {
   onNavigate: (page: string) => void;
   usuario: UsuarioLogado | null;
 }
 
-const API_URL = "http://localhost/servicos-arinos-api";
 
 export function AdminDashboard({ onNavigate, usuario }: AdminDashboardProps) {
   const [aba, setAba] = useState<"pendentes" | "prestadores" | "categorias">("pendentes");
