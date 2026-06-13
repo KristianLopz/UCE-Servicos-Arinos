@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_URL } from "../config/api";
 import { CheckCircle, Mail, Phone, MapPin } from "lucide-react";
 import { FormContainer, InputField, TextareaField } from "../components/FormContainer";
 
@@ -7,21 +8,51 @@ interface ContactProps {
 }
 
 export function Contact({ onNavigate }: ContactProps) {
+  const [erro, setErro] = useState("");
   const [form, setForm] = useState({ nome: "", email: "", mensagem: "" });
   const [sucesso, setSucesso] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const set = (campo: string) => (v: string) => setForm((f) => ({ ...f, [campo]: v }));
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    // TODO: integrar com API de contato
-    setTimeout(() => {
-      setLoading(false);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setErro("");
+
+  if (form.mensagem.trim().length < 10) {
+    setErro("A mensagem deve ter pelo menos 10 caracteres.");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const resposta = await fetch(`${API_URL}/contato.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        nome: form.nome,
+        email: form.email,
+        mensagem: form.mensagem,
+      }),
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
       setSucesso(true);
-    }, 1000);
-  };
+    } else {
+      setErro(dados.mensagem || "Erro ao enviar mensagem.");
+    }
+  } catch (error) {
+    console.error(error);
+    setErro("Não foi possível conectar com a API.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -69,6 +100,12 @@ export function Contact({ onNavigate }: ContactProps) {
                   rows={5}
                   required
                 />
+
+                {erro && (
+  <div className="p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
+    {erro}
+  </div>
+)}
                 <button
                   type="submit"
                   disabled={loading}
