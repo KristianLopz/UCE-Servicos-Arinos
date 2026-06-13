@@ -8,6 +8,8 @@ interface LoginProps {
   onLogin: (usuario: UsuarioLogado) => void;
 }
 
+const API_URL = "http://localhost/servicos-arinos-api";
+
 // Contas de demonstração para login sem backend
 const CONTAS_DEMO: Record<string, { nomeCompleto: string; tipo: TipoUsuario }> = {
   "usuario@demo.com": { nomeCompleto: "Fernanda Rocha", tipo: "usuario" },
@@ -22,30 +24,41 @@ export function Login({ onNavigate, onLogin }: LoginProps) {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErro("");
-    setLoading(true);
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErro("");
+  setLoading(true);
 
-    // TODO: integrar com API de autenticação real
-    setTimeout(() => {
-      setLoading(false);
-      const conta = CONTAS_DEMO[email.toLowerCase()];
-      if (conta && senha.length >= 4) {
-        onLogin({ nomeCompleto: conta.nomeCompleto, email: email.toLowerCase(), tipo: conta.tipo });
-      } else if (senha.length >= 4) {
-        // Simula login genérico com o tipo selecionado
-        const nomes: Record<TipoUsuario, string> = {
-          usuario: "Usuário Demo",
-          prestador: "Prestador Demo",
-          admin: "Admin Demo",
-        };
-        onLogin({ nomeCompleto: nomes[tipo], email, tipo });
-      } else {
-        setErro("E-mail ou senha incorretos. Tente novamente.");
-      }
-    }, 900);
-  };
+  try {
+    const resposta = await fetch(`${API_URL}/login.php`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        senha,
+      }),
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.sucesso) {
+      onLogin({
+        nomeCompleto: dados.usuario.nomeCompleto,
+        email: dados.usuario.email,
+        tipo: dados.usuario.tipo,
+      });
+    } else {
+      setErro(dados.mensagem || "E-mail ou senha incorretos.");
+    }
+  } catch (error) {
+    console.error(error);
+    setErro("Não foi possível conectar com a API.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const tipoOptions: { id: TipoUsuario; label: string; desc: string; icone: React.ReactNode }[] = [
     { id: "usuario", label: "Usuário", desc: "Procuro serviços", icone: <User className="w-5 h-5" /> },
