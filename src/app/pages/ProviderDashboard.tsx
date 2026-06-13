@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   User, Edit, Eye, CheckCircle, Clock, XCircle,
   Plus, MapPin, MessageCircle, Users, TrendingUp,
 } from "lucide-react";
-import { categorias, bairros, getWhatsAppLink, avaliacoes as mockAvaliacoes, calcularDistribuicao } from "../data/mockData";
+import { categorias, bairros, getWhatsAppLink } from "../data/mockData";
+import type { Prestador, Avaliacao } from "../data/mockData";
 import { InputField, SelectField, TextareaField } from "../components/FormContainer";
 import { StarRating, RatingBar } from "../components/StarRating";
 import type { UsuarioLogado } from "../App";
@@ -13,39 +14,67 @@ interface ProviderDashboardProps {
   usuario: UsuarioLogado | null;
 }
 
-const mockPrestadorLogado = {
-  id: "p1",
-  nomeCompleto: "Carlos Alberto Ferreira",
-  nomeProfissional: "Carlos Encanador",
-  email: "carlos.encanador@email.com",
-  whatsapp: "38991234567",
-  categoriaId: "encanador",
-  categoria: "Encanador",
-  descricao: "Profissional com mais de 12 anos de experiência em encanamento residencial e comercial.",
-  bairro: "Centro",
-  avaliacao: 4.8,
-  totalAvaliacoes: 47,
-  totalAtendidos: 112,
-  status: "aprovado" as const,
-  servicos: ["Conserto de vazamentos", "Instalação de torneiras", "Desentupimento"],
-};
+const API_URL = "http://localhost/servicos-arinos-api";
+
+function calcularDistribuicaoAvaliacoes(lista: Avaliacao[]) {
+  const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+  lista.forEach((avaliacao) => {
+    dist[avaliacao.nota]++;
+  });
+
+  return dist;
+}
 
 export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProps) {
-  const [aba, setAba] = useState<"visao-geral" | "perfil" | "servicos" | "previa">("visao-geral");
+    const [aba, setAba] = useState<"visao-geral" | "perfil" | "servicos" | "previa">("visao-geral");
   const [editando, setEditando] = useState(false);
-  const [form, setForm] = useState(mockPrestadorLogado);
+  const [form, setForm] = useState<Prestador | null>(null);
   const [novoServico, setNovoServico] = useState("");
-  const [servicos, setServicos] = useState(mockPrestadorLogado.servicos);
+  const [servicos, setServicos] = useState<string[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState("");
 
-  const set = (campo: string) => (v: string) => setForm((f) => ({ ...f, [campo]: v }));
+  const carregarPerfil = async () => {
+    if (!usuario) {
+      setErro("Você precisa estar logado como prestador.");
+      setCarregando(false);
+      return;
+    }
 
-  const statusConfig = {
-    aprovado:  { label: "Aprovado",            cor: "text-emerald-700 bg-emerald-50 border-emerald-200",    icone: <CheckCircle className="w-4 h-4" /> },
-    aguardando:{ label: "Aguardando aprovação", cor: "text-amber-700 bg-amber-50 border-amber-200",          icone: <Clock className="w-4 h-4" /> },
-    bloqueado: { label: "Bloqueado",            cor: "text-destructive bg-destructive/10 border-destructive/20", icone: <XCircle className="w-4 h-4" /> },
+    try {
+      setCarregando(true);
+      setErro("");
+
+      const resposta = await fetch(
+        `${API_URL}/meuPerfilPrestador.php?email=${encodeURIComponent(usuario.email)}`
+      );
+
+      const dados = await resposta.json();
+
+      if (dados.sucesso) {
+        setForm(dados.prestador);
+        setServicos(dados.prestador.servicos || []);
+        setAvaliacoes(dados.avaliacoes || []);
+      } else {
+        setErro(dados.mensagem || "Erro ao carregar perfil do prestador.");
+      }
+    } catch (error) {
+      console.error(error);
+      setErro("Não foi possível conectar com a API.");
+    } finally {
+      setCarregando(false);
+    }
   };
 
-  const status = statusConfig[form.status];
+  useEffect(() => {
+    carregarPerfil();
+  }, [usuario]);
+
+  const set = (campo: string) => (v: string) => {
+    setForm((f) => (f ? { ...f, [campo]: v } : f));
+  };
 
   const adicionarServico = () => {
     if (novoServico.trim()) {
@@ -53,16 +82,54 @@ export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProp
       setNovoServico("");
     }
   };
-  const removerServico = (i: number) => setServicos((s) => s.filter((_, idx) => idx !== i));
+
+  const removerServico = (i: number) => {
+    setServicos((s) => s.filter((_, idx) => idx !== i));
+  };
+
+  if (carregando) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <div className="text-5xl mb-4">⏳</div>
+        <h3 className="font-semibold text-foreground mb-2">Carregando painel...</h3>
+        <p className="text-muted-foreground text-sm">Buscando dados do seu perfil.</p>
+      </div>
+    );
+  }
+
+  if (erro || !form) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <div className="text-5xl mb-4">⚠️</div>
+        <h3 className="font-semibold text-foreground mb-2">Não foi possível carregar o painel</h3>
+        <p className="text-muted-foreground text-sm mb-4">{erro}</p>
+        <button
+          onClick={() => onNavigate("home")}
+          className="px-5 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold"
+        >
+          Voltar ao início
+        </button>
+      </div>
+    );
+  }
+
+  const statusConfig = {
+    aprovado:  { label: "Aprovado", cor: "text-emerald-700 bg-emerald-50 border-emerald-200", icone: <CheckCircle className="w-4 h-4" /> },
+    aguardando:{ label: "Aguardando aprovação", cor: "text-amber-700 bg-amber-50 border-amber-200", icone: <Clock className="w-4 h-4" /> },
+    bloqueado: { label: "Bloqueado", cor: "text-destructive bg-destructive/10 border-destructive/20", icone: <XCircle className="w-4 h-4" /> },
+  };
+
+  const status = statusConfig[form.status];
 
   const whatsappLink = getWhatsAppLink(form.whatsapp, form.nomeProfissional);
 
-  // Cálculo de avaliações para o dashboard
-  const avals = mockAvaliacoes.filter((a) => a.prestadorId === form.id);
-  const distribuicao = calcularDistribuicao(form.id, mockAvaliacoes);
-  const mediaAtual = avals.length > 0
-    ? avals.reduce((s, a) => s + a.nota, 0) / avals.length
-    : form.avaliacao;
+  const avals = avaliacoes.filter((a) => a.prestadorId === form.id);
+  const distribuicao = calcularDistribuicaoAvaliacoes(avals);
+
+  const mediaAtual =
+    avals.length > 0
+      ? avals.reduce((s, a) => s + a.nota, 0) / avals.length
+      : form.avaliacao;
 
   const nomeExibido = usuario?.nomeCompleto.split(" ")[0] ?? form.nomeProfissional.split(" ")[0];
 
@@ -72,7 +139,6 @@ export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProp
     { id: "servicos",    label: "Meus Serviços" },
     { id: "previa",      label: "Prévia do Card" },
   ] as const;
-
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Cabeçalho */}
@@ -265,7 +331,7 @@ export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProp
                   value={form.categoriaId}
                   onChange={(v) => {
                     const cat = categorias.find((c) => c.id === v);
-                    setForm((f) => ({ ...f, categoriaId: v, categoria: cat?.nome || v }));
+                    setForm((f) => f ? { ...f, categoriaId: v, categoria: cat?.nome || v } : f);
                   }}
                   options={categorias.map((c) => ({ value: c.id, label: `${c.icone} ${c.nome}` }))}
                 />
