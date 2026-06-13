@@ -10,12 +10,6 @@ interface LoginProps {
 }
 
 
-// Contas de demonstração para login sem backend
-const CONTAS_DEMO: Record<string, { nomeCompleto: string; tipo: TipoUsuario }> = {
-  "usuario@demo.com": { nomeCompleto: "Fernanda Rocha", tipo: "usuario" },
-  "prestador@demo.com": { nomeCompleto: "Carlos Alberto Ferreira", tipo: "prestador" },
-  "admin@demo.com": { nomeCompleto: "Administrador Arinos", tipo: "admin" },
-};
 
 export function Login({ onNavigate, onLogin }: LoginProps) {
   const [email, setEmail] = useState("");
@@ -132,25 +126,7 @@ export function Login({ onNavigate, onLogin }: LoginProps) {
             </button>
           </form>
 
-          {/* Contas demo */}
-          <div className="mt-5 p-4 bg-secondary/60 rounded-xl">
-            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-              Contas de teste cadastradas no banco (senha: 1234)
-            </p>
-            <ul className="flex flex-col gap-1.5">
-              {Object.entries(CONTAS_DEMO).map(([e, c]) => (
-                <li key={e}>
-                  <button
-                    type="button"
-                    onClick={() => { setEmail(e); setSenha("1234"); setTipo(c.tipo); }}
-                    className="text-xs text-primary hover:underline text-left"
-                  >
-                    {e} — {c.nomeCompleto} ({c.tipo})
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+
 
           <div className="mt-4 text-center text-sm text-muted-foreground">
             Não tem conta?{" "}
