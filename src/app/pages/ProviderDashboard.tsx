@@ -5,6 +5,7 @@ import {
   Plus, MapPin, MessageCircle, Users, TrendingUp,
 } from "lucide-react";
 import { categorias, bairros, getWhatsAppLink } from "../data/mockData";
+import { formatarBairro } from "../utils/formatarBairro";
 import type { Prestador, Avaliacao } from "../data/mockData";
 import { InputField, SelectField, TextareaField } from "../components/FormContainer";
 import { StarRating, RatingBar } from "../components/StarRating";
@@ -31,6 +32,8 @@ export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProp
   const [aba, setAba] = useState<"visao-geral" | "perfil" | "servicos" | "previa">("visao-geral");
   const [editando, setEditando] = useState(false);
   const [form, setForm] = useState<Prestador | null>(null);
+  const [bairroSelect, setBairroSelect] = useState<string>("");
+  const [bairroOutro, setBairroOutro] = useState<string>("");
   const [novoServico, setNovoServico] = useState("");
   const [servicos, setServicos] = useState<string[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
@@ -59,6 +62,15 @@ export function ProviderDashboard({ onNavigate, usuario }: ProviderDashboardProp
 
       if (dados.sucesso) {
         setForm(dados.prestador);
+        // Ajustar seleção de bairro: se o bairro não estiver na lista pré-definida, usar 'outro'
+        const bairroAtual: string = dados.prestador.bairro || "";
+        if (bairros.includes(bairroAtual)) {
+          setBairroSelect(bairroAtual);
+          setBairroOutro("");
+        } else {
+          setBairroSelect(bairroAtual ? "outro" : "");
+          setBairroOutro(bairroAtual || "");
+        }
         setServicos(dados.prestador.servicos || []);
         setAvaliacoes(dados.avaliacoes || []);
       } else {
@@ -225,7 +237,7 @@ const removerServico = async (i: number) => {
         whatsapp: whatsappLimpo,
         categoriaId: form.categoriaId,
         descricao: form.descricao,
-        bairro: form.bairro,
+        bairro: formatarBairro(bairroSelect === "outro" ? bairroOutro.trim() : (bairroSelect || form.bairro)),
       }),
     });
 
@@ -443,6 +455,7 @@ const removerServico = async (i: number) => {
                     onChange={setWhatsapp}
                     placeholder="(38) 99999-9999"
                     required
+                hint="Digite seu WhatsApp com DDD. Ex: (38) 99999-9999"
                   />
                 <SelectField
                   label="Categoria"
@@ -455,10 +468,27 @@ const removerServico = async (i: number) => {
                 />
                 <SelectField
                   label="Bairro"
-                  value={form.bairro}
-                  onChange={set("bairro")}
-                  options={bairros.map((b) => ({ value: b, label: b }))}
+                  value={bairroSelect || ""}
+                  onChange={(v) => {
+                    setBairroSelect(v);
+                    if (v !== "outro") {
+                      setForm((f) => f ? { ...f, bairro: v } : f);
+                      setBairroOutro("");
+                    } else {
+                      setForm((f) => f ? { ...f, bairro: "" } : f);
+                    }
+                  }}
+                  options={[...bairros.map((b) => ({ value: b, label: b })), { value: "outro", label: "Outro (informar)" }]}
                 />
+                {bairroSelect === "outro" && (
+                  <InputField
+                    label="Informe seu bairro"
+                    value={bairroOutro}
+                    onChange={(v) => setBairroOutro(v)}
+                    placeholder="Ex: Bairro das Flores"
+                    hint="Informe seu bairro ou região (ex: Bairro das Flores)."
+                  />
+                )}
               </div>
               <TextareaField label="Descrição" value={form.descricao} onChange={set("descricao")} rows={4} />
               <button

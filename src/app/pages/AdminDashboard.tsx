@@ -28,6 +28,20 @@ const [estatisticas, setEstatisticas] = useState({
 });
   const [cats, setCats] = useState<Categoria[]>([]);
   const [novaCategoria, setNovaCategoria] = useState("");
+  const [iconeCategoria, setIconeCategoria] = useState("🛠️");
+
+  const iconesDisponiveis = [
+    "🛠️",
+    "⚡",
+    "🏠",
+    "🌱",
+    "🧱",
+    "🪑",
+    "🚗",
+    "🎨",
+    "📱",
+    "🧹",
+  ];
 
 const aprovados = estatisticas.aprovados;
 const pendentes = estatisticas.pendentes;
@@ -141,7 +155,7 @@ const adicionarCategoria = async () => {
       },
       body: JSON.stringify({
         nome,
-        icone: "🛠️",
+        icone: iconeCategoria,
         cor: "#64748b",
       }),
     });
@@ -371,21 +385,38 @@ const excluirCategoria = async (id: string) => {
           <h2 className="font-semibold text-foreground mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             Gerenciar categorias
           </h2>
-          <div className="flex gap-2 mb-6">
-            <input
-              type="text"
-              value={novaCategoria}
-              onChange={(e) => setNovaCategoria(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && adicionarCategoria()}
-              placeholder="Nova categoria..."
-              className="flex-1 bg-input-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary"
-            />
-            <button
-              onClick={adicionarCategoria}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90"
-            >
-              <Plus className="w-4 h-4" /> Adicionar
-            </button>
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex gap-2 flex-col sm:flex-row">
+              <input
+                type="text"
+                value={novaCategoria}
+                onChange={(e) => setNovaCategoria(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && adicionarCategoria()}
+                placeholder="Nova categoria..."
+                className="flex-1 bg-input-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                onClick={adicionarCategoria}
+                className="flex items-center gap-1.5 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90"
+              >
+                <Plus className="w-4 h-4" /> Adicionar
+              </button>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Escolha um ícone para a nova categoria</p>
+              <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
+                {iconesDisponiveis.map((icone) => (
+                  <button
+                    key={icone}
+                    type="button"
+                    onClick={() => setIconeCategoria(icone)}
+                    className={`h-11 rounded-xl border text-xl transition-colors ${iconeCategoria === icone ? "border-primary bg-primary/10" : "border-border bg-secondary/70 hover:bg-secondary"}`}
+                  >
+                    {icone}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {cats.map((cat) => (

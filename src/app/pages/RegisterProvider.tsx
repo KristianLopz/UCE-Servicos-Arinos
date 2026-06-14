@@ -2,6 +2,8 @@ import { useState } from "react";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { FormContainer, InputField, SelectField, TextareaField } from "../components/FormContainer";
 import { categorias, bairros } from "../data/mockData";
+import { formatarBairro } from "../utils/formatarBairro";
+import { formatarTelefone, limparTelefone } from "../utils/formatarTelefone";
 import { API_URL } from "../config/api";
 
 
@@ -22,6 +24,7 @@ export function RegisterProvider({ onNavigate }: RegisterProviderProps) {
     senha: "",
     confirmarSenha: "",
   });
+  const [bairroOutro, setBairroOutro] = useState("");
   const [sucesso, setSucesso] = useState(false);
   const [erro, setErro] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,17 +33,14 @@ export function RegisterProvider({ onNavigate }: RegisterProviderProps) {
 
 
 const setWhatsapp = (v: string) => {
-  const apenasNumeros = v.replace(/\D/g, "").slice(0, 11);
-
+  // Formata para exibição enquanto mantém apenas até 11 dígitos
   setForm((f) => ({
     ...f,
-    whatsapp: apenasNumeros,
+    whatsapp: formatarTelefone(v),
   }));
-
-
 };
 
-const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setErro("");
 
@@ -60,16 +60,26 @@ const handleSubmit = async (e: React.FormEvent) => {
   }
 
 
-const whatsappLimpo = form.whatsapp;
+  const whatsappLimpo = limparTelefone(form.whatsapp);
 
-if (whatsappLimpo.length < 10 || whatsappLimpo.length > 11) {
-  setErro("Informe um WhatsApp válido com DDD. Exemplo: 38999999999");
-  return;
-}
+  if (whatsappLimpo.length < 10 || whatsappLimpo.length > 11) {
+    setErro("Informe um WhatsApp válido com DDD. Exemplo: (38) 99999-9999");
+    return;
+  }
 
 setLoading(true);
 
   try {
+    let bairroParaEnviar = form.bairro === "outro" ? bairroOutro.trim() : form.bairro;
+
+    if (!bairroParaEnviar) {
+      setErro("Informe o bairro ou região de atendimento.");
+      setLoading(false);
+      return;
+    }
+
+    bairroParaEnviar = formatarBairro(bairroParaEnviar);
+
     const resposta = await fetch(`${API_URL}/cadastrarPrestador.php`, {
       method: "POST",
       headers: {
@@ -82,7 +92,7 @@ setLoading(true);
       whatsapp: whatsappLimpo,
       categoriaId: form.categoriaId,
       descricao: form.descricao,
-      bairro: form.bairro,
+      bairro: bairroParaEnviar,
       senha: form.senha,
     }),
     });
@@ -167,9 +177,9 @@ setLoading(true);
               type="tel"
               value={form.whatsapp}
               onChange={setWhatsapp}
-              placeholder="38999999999"
+              placeholder="(38) 99999-9999"
               required
-              hint="Digite somente números com DDD. Exemplo: 38999999999"
+              hint="Digite seu WhatsApp com DDD. Ex: (38) 99999-9999"
             />
             <SelectField
               label="Categoria principal"
@@ -190,9 +200,19 @@ setLoading(true);
               label="Bairro / Região de atendimento"
               value={form.bairro}
               onChange={set("bairro")}
-              options={bairros.map((b) => ({ value: b, label: b }))}
+              options={[...bairros.map((b) => ({ value: b, label: b })), { value: "outro", label: "Outro (informar)" }]}
               required
             />
+            {form.bairro === "outro" && (
+              <InputField
+                label="Informe seu bairro"
+                value={bairroOutro}
+                onChange={(v) => setBairroOutro(v)}
+                placeholder="Ex: Bairro das Flores"
+                required
+                hint="Informe seu bairro ou região (ex: Bairro das Flores)."
+              />
+            )}
             <InputField label="Senha" type="password" value={form.senha} onChange={set("senha")} placeholder="Mínimo 6 caracteres" required />
             <InputField label="Confirmar senha" type="password" value={form.confirmarSenha} onChange={set("confirmarSenha")} placeholder="Repita a senha" required />
 

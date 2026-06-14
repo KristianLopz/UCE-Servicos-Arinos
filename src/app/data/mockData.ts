@@ -55,8 +55,19 @@ export const categorias: Categoria[] = [
 ];
 
 export const bairros = [
-  "Centro", "Bairro Alto", "Vila Nova", "Jardim das Flores",
-  "Santa Luzia", "São José", "Ipiranga", "Progresso",
+  // Bairros de exemplo em Arinos-MG (não é lista exaustiva)
+  "Centro",
+  "Bairro Alto",
+  "Vila Nova",
+  "Jardim das Flores",
+  "Santa Luzia",
+  "São José",
+  "Ipiranga",
+  "Progresso",
+  "Vila Real",
+  "Boa Vista",
+  "São Francisco",
+  "Santa Cruz",
 ];
 
 export const prestadores: Prestador[] = [

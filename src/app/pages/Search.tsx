@@ -16,7 +16,7 @@ export function Search({ onNavigate, initialQuery = "", initialCategoria = "" }:
   const [query, setQuery] = useState(initialQuery);
   const [categoriaFiltro, setCategoriaFiltro] = useState(initialCategoria);
   const [bairroFiltro, setBairroFiltro] = useState("");
-  const [ordenacao, setOrdenacao] = useState("avaliacao");
+  const [ordenacao, setOrdenacao] = useState("avaliacoes");
 
   const [prestadores, setPrestadores] = useState<Prestador[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);

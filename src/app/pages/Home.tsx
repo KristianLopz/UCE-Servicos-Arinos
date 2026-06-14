@@ -20,7 +20,9 @@ export function Home({ onNavigate }: HomeProps) {
     profissionaisLocaisPercent,
   } = useSiteStats();
 
-  const destaques = prestadores.filter((p) => p.destaque && p.status === "aprovado");
+  const destaques = prestadores
+    .filter((p) => p.destaque && p.status === "aprovado")
+    .sort((a, b) => b.totalAvaliacoes - a.totalAvaliacoes);
 
   const handleCategoryClick = (categoriaId: string) => {
     onNavigate("search", { categoria: categoriaId });
