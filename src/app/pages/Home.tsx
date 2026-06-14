@@ -1,14 +1,25 @@
 import { Search, Star, Shield, Zap, Users, ArrowRight, MessageCircle, CheckCircle } from "lucide-react";
-import { categorias, prestadores } from "../data/mockData";
 import { CategoryCard } from "../components/CategoryCard";
 import { ProviderCard } from "../components/ProviderCard";
 import { SearchBar } from "../components/SearchBar";
+import { useSiteStats } from "../utils/useSiteStats";
 
 interface HomeProps {
   onNavigate: (page: string, params?: Record<string, string>) => void;
 }
 
 export function Home({ onNavigate }: HomeProps) {
+  const {
+    prestadores,
+    categorias,
+    carregando,
+    erro,
+    totalPrestadores,
+    totalCategorias,
+    avaliacaoMediaLabel,
+    profissionaisLocaisPercent,
+  } = useSiteStats();
+
   const destaques = prestadores.filter((p) => p.destaque && p.status === "aprovado");
 
   const handleCategoryClick = (categoriaId: string) => {
@@ -76,10 +87,10 @@ export function Home({ onNavigate }: HomeProps) {
       <section className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-2 sm:grid-cols-4 gap-6">
           {[
-            { valor: "55+", label: "Prestadores cadastrados" },
-            { valor: "10", label: "Categorias de serviços" },
-            { valor: "4.7★", label: "Avaliação média" },
-            { valor: "100%", label: "Profissionais locais" },
+            { valor: totalPrestadores ? `${totalPrestadores}` : carregando ? "..." : "0", label: "Prestadores cadastrados" },
+            { valor: totalCategorias ? `${totalCategorias}` : carregando ? "..." : "0", label: "Categorias de serviços" },
+            { valor: carregando ? "..." : avaliacaoMediaLabel, label: "Avaliação média" },
+            { valor: carregando ? "..." : profissionaisLocaisPercent, label: "Profissionais locais" },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
               <p

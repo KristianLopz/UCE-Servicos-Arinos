@@ -1,4 +1,3 @@
-import { formatarTelefone, limparTelefone } from "../utils/formatarTelefone";
 import { useState } from "react";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { FormContainer, InputField, SelectField, TextareaField } from "../components/FormContainer";
@@ -28,8 +27,17 @@ export function RegisterProvider({ onNavigate }: RegisterProviderProps) {
   const [loading, setLoading] = useState(false);
 
   const set = (campo: string) => (v: string) => setForm((f) => ({ ...f, [campo]: v }));
-  const setWhatsapp = (v: string) => {
-  setForm((f) => ({ ...f, whatsapp: formatarTelefone(v) }));
+
+
+const setWhatsapp = (v: string) => {
+  const apenasNumeros = v.replace(/\D/g, "").slice(0, 11);
+
+  setForm((f) => ({
+    ...f,
+    whatsapp: apenasNumeros,
+  }));
+
+
 };
 
 const handleSubmit = async (e: React.FormEvent) => {
@@ -52,10 +60,10 @@ const handleSubmit = async (e: React.FormEvent) => {
   }
 
 
-const whatsappLimpo = limparTelefone(form.whatsapp);
+const whatsappLimpo = form.whatsapp;
 
 if (whatsappLimpo.length < 10 || whatsappLimpo.length > 11) {
-  setErro("Informe um WhatsApp válido com DDD.");
+  setErro("Informe um WhatsApp válido com DDD. Exemplo: 38999999999");
   return;
 }
 
@@ -68,15 +76,15 @@ setLoading(true);
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        nomeCompleto: form.nomeCompleto,
-        nomeProfissional: form.nomeProfissional,
-        email: form.email,
-        whatsapp: whatsappLimpo,
-        categoriaId: form.categoriaId,
-        descricao: form.descricao,
-        bairro: form.bairro,
-        senha: form.senha,
-      }),
+      nomeCompleto: form.nomeCompleto,
+      nomeProfissional: form.nomeProfissional,
+      email: form.email,
+      whatsapp: whatsappLimpo,
+      categoriaId: form.categoriaId,
+      descricao: form.descricao,
+      bairro: form.bairro,
+      senha: form.senha,
+    }),
     });
 
     const dados = await resposta.json();
@@ -159,9 +167,9 @@ setLoading(true);
               type="tel"
               value={form.whatsapp}
               onChange={setWhatsapp}
-              placeholder="(38) 99999-9999"
+              placeholder="38999999999"
               required
-              hint="Digite apenas números. Os clientes entrarão em contato por este número"
+              hint="Digite somente números com DDD. Exemplo: 38999999999"
             />
             <SelectField
               label="Categoria principal"

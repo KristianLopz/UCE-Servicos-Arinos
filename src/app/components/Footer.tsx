@@ -118,7 +118,7 @@ export function Footer({ onNavigate }: FooterProps) {
           className="py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
           style={{ borderTop: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.35)" }}
         >
-          <span>© 2025 Serviços Arinos. Todos os direitos reservados.</span>
+          <span>© 2026 Serviços Arinos. Todos os direitos reservados.</span>
           <span>Feito com ❤️ para Arinos-MG</span>
         </div>
       </div>
