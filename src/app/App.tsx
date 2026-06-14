@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
 import { Home } from "./pages/Home";
@@ -64,8 +64,76 @@ export default function App() {
   const navigate = (page: string, newParams: Record<string, string> = {}) => {
     setCurrentPage(page as Page);
     setParams(newParams);
+    // Atualiza a URL para permitir compartilhamento direto
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("page", page);
+      Object.entries(newParams).forEach(([k, v]) => {
+        if (v == null || v === "") url.searchParams.delete(k);
+        else url.searchParams.set(k, v);
+      });
+      window.history.pushState({}, "", url.toString());
+    } catch (e) {
+      // fallback: usar hash
+      const parts = [page];
+      if (newParams.id) parts.push(newParams.id);
+      window.location.hash = `#/${parts.join("/")}`;
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Inicializa a página a partir da URL (permitir links diretos)
+  useEffect(() => {
+    try {
+      const sp = new URL(window.location.href).searchParams;
+      const p = (sp.get("page") as Page) || undefined;
+      const id = sp.get("id") || undefined;
+      const query = sp.get("query") || sp.get("q") || undefined;
+      const categoria = sp.get("categoria") || undefined;
+
+      if (p) {
+        setCurrentPage(p);
+        setParams({ id, query, categoria });
+      }
+    } catch (e) {
+      // tentar hash (#/page/id)
+      const hash = window.location.hash.replace(/^#\/?/, "");
+      if (hash) {
+        const parts = hash.split("/");
+        const p = parts[0] as Page;
+        const id = parts[1] || undefined;
+        if (p) {
+          setCurrentPage(p);
+          setParams({ id });
+        }
+      }
+    }
+  }, []);
+
+  // Manter histórico navegável (back/forward)
+  useEffect(() => {
+    const handler = () => {
+      try {
+        const sp = new URL(window.location.href).searchParams;
+        const p = (sp.get("page") as Page) || "home";
+        const id = sp.get("id") || undefined;
+        const query = sp.get("query") || sp.get("q") || undefined;
+        const categoria = sp.get("categoria") || undefined;
+        setCurrentPage(p);
+        setParams({ id, query, categoria });
+      } catch (e) {
+        const hash = window.location.hash.replace(/^#\/?/, "");
+        const parts = hash.split("/");
+        const p = parts[0] as Page;
+        const id = parts[1] || undefined;
+        setCurrentPage(p || "home");
+        setParams({ id });
+      }
+    };
+
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, []);
 
 const handleLogin = (usuario: UsuarioLogado) => {
   setUsuarioLogado(usuario);
